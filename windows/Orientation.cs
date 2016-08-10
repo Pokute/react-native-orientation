@@ -34,15 +34,17 @@ namespace ReactNative.Modules.Orientation
             TempConstants.Add("initialOrientation", CreateDeviceOrientationString(Windows.Graphics.Display.DisplayInformation.GetForCurrentView().CurrentOrientation));
             _Constants = TempConstants;
 
-            Windows.Graphics.Display.DisplayInformation.GetForCurrentView().OrientationChanged += TryingToWork;
+            Windows.Graphics.Display.DisplayInformation.GetForCurrentView().OrientationChanged += OrientationListener;
         }
 
-        public void TryingToWork (Windows.Graphics.Display.DisplayInformation di, object args)
+        public void OrientationListener(Windows.Graphics.Display.DisplayInformation di, object args)
         {
-            JObject newOrientation = new JObject();
-            newOrientation.Add("orientation", CreateDeviceOrientationString(di.CurrentOrientation));
-            Context.GetJavaScriptModule<RCTDeviceEventEmitter>().emit("orientationDidChange", newOrientation);
-            Context.GetJavaScriptModule<RCTDeviceEventEmitter>().emit("specificOrientationDidChange", newOrientation);
+            JObject SimpleJSOrientation = new JObject();
+            SimpleJSOrientation.Add("orientation", SimplifyOrientationString(CreateDeviceOrientationString(di.CurrentOrientation)));
+            Context.GetJavaScriptModule<RCTDeviceEventEmitter>().emit("orientationDidChange", SimpleJSOrientation);
+            JObject JSOrientation = new JObject();
+            JSOrientation.Add("orientation", CreateDeviceOrientationString(di.CurrentOrientation));
+            Context.GetJavaScriptModule<RCTDeviceEventEmitter>().emit("specificOrientationDidChange", JSOrientation);
         }
 
         public override string Name
@@ -103,6 +105,15 @@ namespace ReactNative.Modules.Orientation
                 default:
                     return new JValue("UNKNOWN");
             }
+        }
+
+        public static JValue SimplifyOrientationString(JValue OrientationString)
+        {
+            if ((OrientationString.ToString() == "LANDSCAPE-LEFT") || (OrientationString.ToString() == "LANDSCAPE-RIGHT"))
+                return new JValue("LANDSCAPE");
+            if ((OrientationString.ToString() == "PORTRAIT") || (OrientationString.ToString() == "PORTRAITUPSIDEDOWN"))
+                return new JValue("PORTRAIT");
+            return OrientationString;
         }
 
         [ReactMethod]
